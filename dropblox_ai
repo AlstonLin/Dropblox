@@ -3,6 +3,7 @@
 # Sample dropblox_ai exectuable.
 #
 
+import copy
 import json
 import sys
 import time
@@ -181,18 +182,52 @@ class Board(object):
     new_bitmap = [list(row) for row in self.bitmap]
     for square in self.block.squares():
       new_bitmap[square.i][square.j] = 1
-    new_bitmap = Board.remove_rows(new_bitmap)
+    new_bitmap, j = Board.remove_rows(new_bitmap)
     if len(self.preview) == 0:
       print "There are no blocks left in the preview list! You can't look that far ahead."
       return None
-    return Board(new_bitmap, self.preview[0], self.preview[1:])
+    return Board(new_bitmap, self.preview[0], self.preview[1:]), j
 
   # A helper method used to remove any full rows from a bitmap. Returns the new bitmap.
   @staticmethod
   def remove_rows(bitmap):
     (rows, cols) = (len(bitmap), len(bitmap[0]))
     new_bitmap = [row for row in bitmap if not all(row)]
-    return [cols*[0] for i in range(rows - len(new_bitmap))] + new_bitmap
+    j = rows - len(new_bitmap)
+    return [cols*[0] for i in range(rows - len(new_bitmap))] + new_bitmap, j
+
+class State(object):
+  moves = []
+  rows_cleared = 0
+  board = None
+
+  def __init__(self, board, moves, rows_cleared):
+    self.board = board
+    self.moves = moves
+    self.rows_cleared = rows_cleared
+
+def get_states(board, block):
+  states = []
+  rotations = []
+
+  for i in range(0, 4):
+    if block.checked_rotate(board):
+      rotations.append('rotate')
+      # Left
+      translations = []
+      while block.checked_left(board):
+        translations.append('left')
+        result, rows_removed = board.place()
+        states.append(State(result, rotations + translations, rows_removed))
+      block.reset_position()
+      # Moves the block right
+      translations = []
+      while block.checked_right(board):
+        translations.append('right')
+        result, rows_removed = board.place()
+        states.append(State(result, rotations + translations, rows_removed))
+      block.reset_position() 
+  return states;
 
 if __name__ == '__main__':
   if len(sys.argv) == 3:
@@ -206,13 +241,12 @@ if __name__ == '__main__':
     # current block
     block = board.block
 
-    # very simple AI that moves the current block as far left as possible
-    moves = []                  # list of moves to make
-    while board.check(block):   # while the block in in a legal position
-      block.left()              # move the block left
-      moves.append('left')      # append a left command to oure moves list
-    if len(moves) > 0:          # remove that last left command, as it got the block into an illegal state
-      moves.pop()
+    # ACTUAL ALGORITHM
+    moves = []                  # list of moves to 
+    states = get_states(board, block)
+    for i in range(len(states)):
+      print states[i].moves
+    # Sends the moves
     for move in moves:          # print our moves
       print move
     sys.stdout.flush()          # flush stdout
