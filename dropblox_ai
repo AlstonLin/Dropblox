@@ -213,6 +213,8 @@ def get_states(board, block):
   for i in range(0, 4):
     if block.checked_rotate(board):
       rotations.append('rotate')
+      result, rows_removed = board.place()
+      states.append(State(result, rotations, rows_removed))
       # Left
       translations = []
       while block.checked_left(board):
