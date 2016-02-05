@@ -247,20 +247,20 @@ def heuristic(board, rr):
   p = heights(board);
   h = p[0]
   holez = p[1]
-  agg = sum(h);
+  agg = sum(h)/12;
   blocky = 0;
   for i in range(12-1):
     blocky += abs(h[i] - h[i + 1]);
   #constants
-  a = -0.1
-  b =  0.1
-  c = -0.1
-  d = -0.1
+  a = -10
+  b = 0
+  c = 0
+  d = 0
   return a*agg + b*rr + c*holez + d*blocky;
 
 #bestmoves STUFF
 def greater(x, y):
-  if x[0] < y[0]:
+  if x[0] > y[0]:
     return 1;
   else:
     return -1;
