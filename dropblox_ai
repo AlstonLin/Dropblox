@@ -228,6 +228,52 @@ def get_states(board, block):
         states.append(State(result, rotations + translations, rows_removed))
       block.reset_position() 
   return states;
+#finds hiehgts and holes
+def heights(board):
+  a = [0] * 12;
+  z = 0;
+  b = board.bitmap;
+  for i in range(12):
+    c = False;
+    for j in range(33):
+      if b[j][i] != 0 and c == False:
+        c = True;
+        a[i] = 33-j;
+      elif b[j][i] == 0 and c:
+        z += 1;
+  return [a, z];
+#heuristic f'n
+def heuristic(board, rr):
+  p = heights(board);
+  h = p[0]
+  holez = p[1]
+  agg = sum(h);
+  blocky = 0;
+  for i in range(12-1):
+    blocky += abs(h[i] - h[i + 1]);
+  #constants
+  a = -0.1
+  b =  0.1
+  c = -0.1
+  d = -0.1
+  return a*agg + b*rr + c*holez + d*blocky;
+
+#bestmoves STUFF
+def greater(x, y):
+  if x[0] < y[0]:
+    return 1;
+  else:
+    return -1;
+
+def bestmoves(board, block):
+  states = get_states(board, block);
+  for i in range(len(states)):
+    states[i] = [heuristic(states[i].board, states[i].rows_cleared), states[i]];
+  states.sort(greater);
+  print states[0][0]
+  return states[0][1].moves;
+
+#def DFS(board, block, arr, )
 
 if __name__ == '__main__':
   if len(sys.argv) == 3:
@@ -240,15 +286,11 @@ if __name__ == '__main__':
 
     # current block
     block = board.block
-
     # ACTUAL ALGORITHM
-    moves = []                  # list of moves to 
-    states = get_states(board, block)
-    for i in range(len(states)):
-      print states[i].moves
-    # Sends the moves
-    for move in moves:          # print our moves
-      print move
+    moves = bestmoves(board, block);
+    for move in moves:
+      print move;
+    # Sends the 
     sys.stdout.flush()          # flush stdout
 
 
