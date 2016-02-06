@@ -2,7 +2,6 @@
 #
 # Sample dropblox_ai exectuable.
 #
-
 import copy
 import json
 import sys
@@ -212,21 +211,29 @@ def get_states(board, block):
 
   for i in range(0, 4):
     if block.checked_rotate(board):
+      for j in range(i):
+        block.rotate();
       rotations.append('rotate')
+      #print rotations
       result, rows_removed = board.place()
-      states.append(State(result, rotations, rows_removed))
+      #print result.bitmap[-1] + result.bitmap[-2]
+      states.append(State(result, copy.copy(rotations), rows_removed))
       # Left
       translations = []
       while block.checked_left(board):
         translations.append('left')
         result, rows_removed = board.place()
+       # print result.bitmap[-1] + result.bitmap[-2]
         states.append(State(result, rotations + translations, rows_removed))
       block.reset_position()
+      for j in range(i + 1):
+        block.rotate();
       # Moves the block right
       translations = []
       while block.checked_right(board):
         translations.append('right')
         result, rows_removed = board.place()
+       # print result.bitmap[-1] + result.bitmap[-2]
         states.append(State(result, rotations + translations, rows_removed))
       block.reset_position() 
   return states;
@@ -250,32 +257,62 @@ def heuristic(board, rr):
   h = p[0]
   holez = p[1]
   agg = sum(h)/12;
+  edges = h[0] + h[1] + h[11] + h[10]
   blocky = 0;
   for i in range(12-1):
     blocky += abs(h[i] - h[i + 1]);
   #constants
-  a = -10
-  b = 0
-  c = 0
-  d = 0
-  return a*agg + b*rr + c*holez + d*blocky;
+  a = -.5;
+  b = .8;
+  c = -.3;
+  d = -.1;
+  e = 0;
+  return a*agg + b*rr + c*holez + d*blocky + e*edges;
 
 #bestmoves STUFF
 def greater(x, y):
-  if x[0] > y[0]:
+  if x[0] < y[0]:
     return 1;
+  elif x[0] == y[0]:
+    return 0
   else:
     return -1;
 
-def bestmoves(board, block):
+def bestmoves(board, block, num):
   states = get_states(board, block);
   for i in range(len(states)):
+    #print states[i].moves
+    #print heuristic(states[i].board, states[i].rows_cleared)
     states[i] = [heuristic(states[i].board, states[i].rows_cleared), states[i]];
   states.sort(greater);
-  print states[0][0]
-  return states[0][1].moves;
+  if num < len(states):
+    return states[:num];
+  else:
+    return states;
 
-#def DFS(board, block, arr, )
+def DFS(board, block, depth, num):
+  moves = bestmoves(board, block, num);
+  if depth == 4:
+    if not moves:
+      return 0.34234513423;
+    return moves[0][0];
+  else:
+    for i in moves:
+      bd = i[1].board;
+      bk = i[1].board.block;
+      scr = DFS(bd, bk, depth + 1, num);
+      if scr != 0.34234513423:
+        i[0] = scr
+    moves.sort(greater)
+    if depth != 0:
+      if not moves:
+        return 0.34234513423;
+      return moves[0][0];
+  if depth == 0:
+    print moves[0][1].board
+    return moves[0][1].moves;
+
+
 
 if __name__ == '__main__':
   if len(sys.argv) == 3:
@@ -289,7 +326,7 @@ if __name__ == '__main__':
     # current block
     block = board.block
     # ACTUAL ALGORITHM
-    moves = bestmoves(board, block);
+    moves = DFS(board, block, 0, 3);
     for move in moves:
       print move;
     # Sends the 
